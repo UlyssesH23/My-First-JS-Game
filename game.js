@@ -12,19 +12,23 @@ var scoreForComputer = 0;
 var ballY = 50;
 var ballspeedY = 5;
 var paddle2Y = 250;
-var paddle2YSpeed = 5;
-var ballRadius=10;
-const MARGIN_FOR_ERROR = 0;
+var paddle2YSpeed = 4;
+var ballRadius = 10;
+const MARGIN_FOR_ERROR = 5;
 const PADDLE_HEIGHT = 100;
 const PADDLE_WIDTH = 10;
 const ONE_HALF_PADDLE_HEIGHT = PADDLE_HEIGHT / 2;
 // number multiplied by deltaY to determine the bally speed
 const REDUCER = 0.175;
 const WINNING_SCORE = 10;
-var showingWinScreen= false;
-var showingLoseScreen=false;
+var showingWinScreen = false;
+var showingLoseScreen = false;
+var showingStartScreen = true;
+var colors = ["Red", "Blue", "Green", "Orange", "Purple", "Yellow", "Brown"];
+var ballColor = "white";
 
 function calculateMousePos(evt) {
+
   var rect = canvas.getBoundingClientRect();
   var root = document.documentElement;
   var mouseX = evt.clientX - rect.left - root.scrollLeft;
@@ -35,8 +39,21 @@ function calculateMousePos(evt) {
   }
 
 }
+
+// gets random number
+function getRandomInt(max) {
+  return Math.floor(Math.random() * Math.floor(max));
+}
+
+function changeColor() {
+  var num = getRandomInt(6);
+  var chosenColor = colors[num];
+  ballColor = chosenColor;
+}
+
 // Stops JS from loading till window loads
 window.onload = function() {
+
   console.log("%c Hello World", "color:blue; font-weight:bold;");
   // Attachs canvas var to canvas on HTML page
   canvas = document.getElementById("gameCanvas");
@@ -57,40 +74,26 @@ window.onload = function() {
 
 }
 
+
+
+
 function gameReset() {
+  showingWinScreen = false;
+  showingLoseScreen = false;
+  showingStartScreen = false;
   scoreForPlayer = 0;
   scoreForComputer = 0;
-  paddle1Y=250;
-  paddle2Y=250;
-  ballRadius=10;
+  paddle1Y = 250;
+  paddle2Y = 250;
+  ballRadius = 10;
   ballX = canvas.width / 2;
   ballspeedX = -ballspeedX;
 }
 
-function ballReset() {
-  if (scoreForPlayer >= WINNING_SCORE) {
-    showingWinScreen=true;
-ballspeedx=0;
-    ballx=canvas.width/2;
-    canvasContext.fillText("You Win", 450, 300, 200);
-setTimeout(function () {
-  gameReset();
-}, 6000);
-
-
-  } else if (scoreForComputer >= WINNING_SCORE) {
-    canvasContext.fillText("You Lose", 450, 300, 200);
-    showingLoseScreen=true;
-    gameReset();
-  } else {
-    ballX = canvas.width / 2;
-    ballspeedX = -ballspeedX;
-  }
-}
-
-
 
 function computerMovement() {
+
+
   var paddle2YCenter = paddle2Y + ONE_HALF_PADDLE_HEIGHT;
   if (paddle2YCenter < ballY - 35) {
     //moves it down by paddle2YSpeed
@@ -107,15 +110,20 @@ function computerMovement() {
 
 // animates game
 function animateGame() {
-  ballX += ballspeedX;
-  ballY += ballspeedY;
+  //stops animate game from running if pne of the screens showing
+  if (showingWinScreen || showingLoseScreen || showingStartScreen) {
 
+    return;
+  }
   //calls function to control right paddle
   computerMovement();
-
+  // gives ball horizontal movement
+  ballX += ballspeedX;
+  //gives ball vertical movement
+  ballY += ballspeedY;
 
   // makes boundry on the left resets ball if it goes past the paddle
-  if (ballX < PADDLE_WIDTH) 
+  if (ballX < PADDLE_WIDTH)
 
     if (ballY >= paddle1Y - MARGIN_FOR_ERROR && ballY <= paddle1Y + PADDLE_HEIGHT + MARGIN_FOR_ERROR) {
       ballspeedX = -ballspeedX;
@@ -124,13 +132,16 @@ function animateGame() {
       console.log(deltaY);
       ballspeedY = deltaY * REDUCER;
       console.log("bounced-left");
+        changeColor();
     } else {
       scoreForComputer++;
       ballReset();
       console.log("reset-left");
 
     }
-  }
+
+
+
 
   //makes boundry on right side
   if (ballX > canvas.width - PADDLE_WIDTH) {
@@ -141,9 +152,11 @@ function animateGame() {
       console.log(deltaY);
       ballspeedY = deltaY * REDUCER;
       console.log("bounced-right");
+        changeColor();
     } else {
       // must add points before reset
       scoreForPlayer++;
+
       ballReset();
       console.log("reset-right");
 
@@ -153,6 +166,7 @@ function animateGame() {
   // keeps ball form disapeering on bottom
   if (ballY > canvas.height - 25) {
     ballspeedY = -ballspeedY;
+
   }
   // keeps ball from disapeering on top
   if (ballY < 50) {
@@ -160,17 +174,39 @@ function animateGame() {
   }
 }
 
+function ballReset() {
+  // Displays winning Screen
+  if (scoreForPlayer >= WINNING_SCORE) {
+    showingWinScreen = true;
+
+  } else if (scoreForComputer >= WINNING_SCORE) {
+    showingLoseScreen = true;
+
+  } else {
+    ballX = canvas.width / 2;
+    ballY = canvas.height / 2;
+    ballspeedX = -ballspeedX;
+  }
+}
+
 // funcition to draw evrything in the game
 function drawGame() {
+
   //black background
   colorRect(0, 0, canvas.width, canvas.height, "black");
+  if (showingWinScreen || showingLoseScreen || showingStartScreen) {
+    stopGame();
+    return;
+  }
+
   //Left player Paddle
   colorRect(0, paddle1Y, PADDLE_WIDTH, PADDLE_HEIGHT, "white");
   //Right Paddle
   colorRect(canvas.width - PADDLE_WIDTH, paddle2Y, PADDLE_WIDTH, PADDLE_HEIGHT, "white");
   //Ball
-  drawBall(ballX, ballY, ballRadius, "white");
-
+  drawBall(ballX, ballY, ballRadius, ballColor);
+  //Player scores
+  canvasContext.fillStyle="white";
   canvasContext.fillText(scoreForPlayer, 100, 100);
   canvasContext.fillText(scoreForComputer, 700, 100);
 
@@ -190,4 +226,43 @@ function drawBall(centerX, centerY, radius, color) {
   canvasContext.beginPath();
   canvasContext.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
   canvasContext.fill();
+}
+
+function stopGame() {
+  if (showingWinScreen) {
+    canvasContext.fillStyle = "white";
+    canvasContext.font = "20px Georgia";
+    canvasContext.fillText("You Win!", 325, 300);
+    canvasContext.font = "10px Georgia";
+    canvasContext.fillText("Click to continue", 375, 400);
+    resetClick();
+    return;
+  } else if (showingLoseScreen) {
+      canvasContext.fillStyle = "white";
+    canvasContext.font = "20px Georgia";
+    canvasContext.fillText("You Lost!", 325, 300);
+    canvasContext.font = "10px Georgia";
+    canvasContext.fillText("Click to continue", 375, 400);
+    resetClick();
+    return;
+  } else if (showingStartScreen) {
+    canvasContext.fillStyle = "white";
+    canvasContext.font = "30px Georgia";
+    canvasContext.fillText("Whiff Whaff", 325, 300);
+    canvasContext.font = "10px Georgia";
+    canvasContext.fillText("Click to Start Game", 375, 400);
+    resetClick();
+    return;
+  }
+
+
+}
+
+function resetClick() {
+  canvas.addEventListener('click', function(event) {
+    if (showingWinScreen || showingLoseScreen || showingStartScreen) {
+      gameReset();
+
+    }
+  });
 }
