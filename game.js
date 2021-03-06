@@ -12,20 +12,35 @@ var scoreForComputer = 0;
 var ballY = 50;
 var ballspeedY = 5;
 var paddle2Y = 250;
-var paddle2YSpeed = 4;
+var paddle2YSpeed = 4.25;
 var ballRadius = 10;
 const MARGIN_FOR_ERROR = 5;
 const PADDLE_HEIGHT = 100;
 const PADDLE_WIDTH = 10;
 const ONE_HALF_PADDLE_HEIGHT = PADDLE_HEIGHT / 2;
 // number multiplied by deltaY to determine the bally speed
-const REDUCER = 0.175;
+// calculated so the ball speed is never greater than 6
+const REDUCER = 0.109091;
 const WINNING_SCORE = 10;
+const NET_LINE_WIDTH=2;
+const NET_LINE_HEIGHT=20;
 var showingWinScreen = false;
 var showingLoseScreen = false;
 var showingStartScreen = true;
-var colors = ["Red", "Blue", "Green", "Orange", "Purple", "Yellow", "Brown"];
+var colorArray = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6',
+		  '#E6B333', '#3366E6', '#999966', '#99FF99', '#B34D4D',
+		  '#80B300', '#809900', '#E6B3B3', '#6680B3', '#66991A',
+		  '#FF99E6', '#CCFF1A', '#FF1A66', '#E6331A', '#33FFCC',
+		  '#66994D', '#B366CC', '#4D8000', '#B33300', '#CC80CC',
+		  '#66664D', '#991AFF', '#E666FF', '#4DB3FF', '#1AB399',
+		  '#E666B3', '#33991A', '#CC9999', '#B3B31A', '#00E680',
+		  '#4D8066', '#809980', '#E6FF80', '#1AFF33', '#999933',
+		  '#FF3380', '#CCCC00', '#66E64D', '#4D80CC', '#9900B3',
+		  '#E64D66', '#4DB380', '#FF4D4D', '#99E6E6', '#6666FF'];
+var chosenBallColor= "white";
 var ballColor = "white";
+var chosenColor="white";
+var randomColor="white";
 
 function calculateMousePos(evt) {
 
@@ -45,10 +60,29 @@ function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-function changeColor() {
-  var num = getRandomInt(6);
-  var chosenColor = colors[num];
-  ballColor = chosenColor;
+function getRandomColor(){
+  var num = getRandomInt(49);
+  var chosenColor = colorArray[num];
+  if (chosenColor === randomColor ){
+    var num = getRandomInt(49);
+    chosenColor = colorArray[num];
+}
+else{
+  var randomColor = chosenColor;
+}
+}
+
+function changeBallColor() {
+  var num = getRandomInt(49);
+  var chosenBallColor = colorArray[num];
+
+  if (chosenBallColor === ballColor){
+    var num = getRandomInt(49);
+    var chosenBallColor = colorArray[num];
+  }
+else{
+  ballColor = chosenBallColor;
+}
 }
 
 // Stops JS from loading till window loads
@@ -123,7 +157,7 @@ function animateGame() {
   ballY += ballspeedY;
 
   // makes boundry on the left resets ball if it goes past the paddle
-  if (ballX < PADDLE_WIDTH)
+  if (ballX < PADDLE_WIDTH+ballRadius)
 
     if (ballY >= paddle1Y - MARGIN_FOR_ERROR && ballY <= paddle1Y + PADDLE_HEIGHT + MARGIN_FOR_ERROR) {
       ballspeedX = -ballspeedX;
@@ -132,7 +166,7 @@ function animateGame() {
       console.log(deltaY);
       ballspeedY = deltaY * REDUCER;
       console.log("bounced-left");
-        changeColor();
+        changeBallColor();
     } else {
       scoreForComputer++;
       ballReset();
@@ -144,7 +178,7 @@ function animateGame() {
 
 
   //makes boundry on right side
-  if (ballX > canvas.width - PADDLE_WIDTH) {
+  if (ballX > canvas.width - PADDLE_WIDTH-ballRadius) {
     // need to figure out why this works
     if (ballY >= paddle2Y - MARGIN_FOR_ERROR && ballY <= paddle2Y + PADDLE_HEIGHT + MARGIN_FOR_ERROR) {
       ballspeedX = -ballspeedX;
@@ -152,7 +186,7 @@ function animateGame() {
       console.log(deltaY);
       ballspeedY = deltaY * REDUCER;
       console.log("bounced-right");
-        changeColor();
+        changeBallColor();
     } else {
       // must add points before reset
       scoreForPlayer++;
@@ -198,7 +232,8 @@ function drawGame() {
     stopGame();
     return;
   }
-
+  // Draws net
+  drawNet();
   //Left player Paddle
   colorRect(0, paddle1Y, PADDLE_WIDTH, PADDLE_HEIGHT, "white");
   //Right Paddle
@@ -207,6 +242,7 @@ function drawGame() {
   drawBall(ballX, ballY, ballRadius, ballColor);
   //Player scores
   canvasContext.fillStyle="white";
+  canvasContext.font = "20px Georgia";
   canvasContext.fillText(scoreForPlayer, 100, 100);
   canvasContext.fillText(scoreForComputer, 700, 100);
 
@@ -226,6 +262,13 @@ function drawBall(centerX, centerY, radius, color) {
   canvasContext.beginPath();
   canvasContext.arc(centerX, centerY, radius, 0, Math.PI * 2, true);
   canvasContext.fill();
+}
+function drawNet(){
+  for ( i=0; i  < canvas.height; i+=40){
+    getRandomColor();
+    console.log(randomColor);
+    colorRect(canvas.width/2 - 1,  i ,NET_LINE_WIDTH, NET_LINE_HEIGHT, randomColor);
+  }
 }
 
 function stopGame() {
